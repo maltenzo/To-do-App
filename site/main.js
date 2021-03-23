@@ -31,11 +31,32 @@ function deleteTodo(key){
   render(todo);
 }
 
-function editTodo(key){
-  const index = todo_list.findIndex(item => item.id === Number(key))
+function beginEditTodo(key){
+  const index = todo_list.findIndex(item => item.id === Number(key));
   todo_list[index].editing = true;
   render(todo_list[index]);
+}
 
+function confimrEditTodo(key){
+  const index = todo_list.findIndex(item => item.id === Number(key));
+  todo_list[index].editing = false;
+  const new_text = document.getElementById("edit-text").value;
+  todo_list[index].text = new_text;
+  render(todo_list[index]);
+}
+
+function cancelEditTodo(key){
+  const index = todo_list.findIndex(item => item.id === Number(key));
+  todo_list[index].editing = false;
+  render(todo_list[index]);
+}
+
+function noOneIsEditing(){
+  let res = false;
+  todo_list.forEach((item, i) => {
+    res += item.editing
+  });
+  return !res
 }
 
 function render(todo){
@@ -113,11 +134,21 @@ list.addEventListener("click", event =>{
     toggleDone(itemKey)
   }
   else if (event.target.classList.contains('delete-todo')) {
-  const itemKey = event.target.parentElement.dataset.key;
-  deleteTodo(itemKey);
+    const itemKey = event.target.parentElement.dataset.key;
+    deleteTodo(itemKey)
   }
-  else if (event.target.classList.contains('edit-todo')) {
-  const itemKey = event.target.parentElement.dataset.key;
-  editTodo(itemKey);
+  else if (event.target.classList.contains('edit-todo')  && noOneIsEditing() ) {
+    const itemKey = event.target.parentElement.dataset.key;
+    console.log(event.target.parentElement.dataset.key)
+    beginEditTodo(itemKey)
   }
-})
+  else if (event.target.classList.contains('edit-confirm')) {
+    console.log(event.target.parentElement.dataset.key)
+    const itemKey = event.target.parentElement.dataset.key;
+    confimrEditTodo(itemKey)
+  }
+  else if (event.target.classList.contains('edit-cancel')) {
+    const itemKey = event.target.parentElement.dataset.key;
+    cancelEditTodo(itemKey)
+  }
+});
