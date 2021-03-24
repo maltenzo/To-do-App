@@ -1,5 +1,7 @@
 let todo_list = [];
+let folder_list =[];
 let global_id = 0;
+let current_folder = 0;
 
 function add_to_do(text){
   const todo = {
@@ -8,9 +10,107 @@ function add_to_do(text){
     checked: false,
     editing:false,
   };
+  if (current_folder !== "root"){
+    const index = folder_list.findIndex(item => item.id === current_folder);
+    folder_list[index].items.push(todo.id);
+  }
   global_id++;
   todo_list.push(todo);
   render(todo)
+}
+
+function add_folder(text){
+  const folder ={
+    name:text,
+    id: global_id,
+    items:[],
+
+  };
+  global_id++;
+  folder_list.push(folder)
+  renderFolder(folder)
+}
+
+function enterFolder(key){
+  const index = folder_list.findIndex(item => item.id === Number(key));
+  const folder = folder_list[index];
+  hideFolders();
+  toggleToDos(folder.items);
+  changeDirectory(folder.name, folder.id);
+
+}
+
+function returnToRoot(){
+  changeDirectory(folder_list[0].name, folder_list[0].id);
+  folder_list.forEach((folder, i) => {
+    renderFolder(folder)
+  });
+  const itemsToRender = folder_list[0].items;
+  toggleToDos(itemsToRender)
+
+
+
+}
+
+function hideFolders(){
+  const list = document.getElementById("folders-list");
+  folder_list.forEach((folder, i) => {
+    if(folder.id > 0){
+      let item = document.querySelector(`[data-key='${folder.id}']`);
+      item.remove()
+    }
+  });
+
+}
+
+function toggleToDos(items){
+  const list = document.getElementById("todo-list");
+  todo_list.forEach((todo, i) => {
+      if(!items.includes(todo.id)){
+        let item = document.querySelector(`[data-key='${todo.id}']`);
+        if (item !== null){
+          item.remove()
+        }
+      }
+      else{
+        render(todo)
+      }
+  });
+
+}
+
+function changeDirectory(folderName, folderId){
+  const directory = document.getElementById("directory");
+  console.log(directory.textContent)
+  directory.innerText = "carpeta";
+  const new_folder_btn = document.getElementById("new-folder");
+  if (folderName !== "root"){
+  new_folder_btn.textContent = "Back";
+  }
+  else{
+    new_folder_btn.textContent = "New Folder";
+  }
+  current_folder = folderId
+}
+function renderFolder(folder){
+  if (folder.name !== "root"){
+    const list = document.getElementById("folders-list");
+    const elem = document.createElement("li");
+    const item = document.querySelector(`[data-key='${folder.id}']`);
+
+    elem.setAttribute('data-key', folder.id);
+    elem.setAttribute("class", `folder`);
+      elem.innerHTML = `
+        <button class=folder-access>
+          <img src="imgs/open-file-button.svg" />
+        </button>
+        <span>${folder.name}</span>
+        <button class="delete-folder">
+        <img src="imgs/trash.svg" /img>
+        </button>
+    `;
+    list.append(elem)
+  }
 }
 
 function toggleDone(key){
@@ -37,7 +137,7 @@ function beginEditTodo(key){
   render(todo_list[index]);
 }
 
-function confimrEditTodo(key){
+function confirmEditTodo(key){
   const index = todo_list.findIndex(item => item.id === Number(key));
   todo_list[index].editing = false;
   const new_text = document.getElementById("edit-text").value;
@@ -145,10 +245,34 @@ list.addEventListener("click", event =>{
   else if (event.target.classList.contains('edit-confirm')) {
     console.log(event.target.parentElement.dataset.key)
     const itemKey = event.target.parentElement.dataset.key;
-    confimrEditTodo(itemKey)
+    confirmEditTodo(itemKey)
   }
   else if (event.target.classList.contains('edit-cancel')) {
     const itemKey = event.target.parentElement.dataset.key;
     cancelEditTodo(itemKey)
   }
 });
+
+add_folder("root");
+const buttonF = document.getElementById("new-folder");
+buttonF.addEventListener("click", event =>{
+  if (event.target.textContent === "New Folder"){
+    folderName = document.getElementById("to-do").value; //change later to input-text
+    add_folder(folderName);
+  }
+  else if(event.target.textContent === "Back"){
+      returnToRoot();
+  }
+});
+
+const listF = document.getElementById("folders-list");
+listF.addEventListener("click", event =>{
+  if(event.target.classList.contains("folder-access")){
+    const itemKey = event.target.parentElement.dataset.key;
+    enterFolder(itemKey);
+  }
+  else if (event.target.classList.contains("delete-folder")) {
+    const itemKey = event.target.parentElement.dataset.key;
+    deleteFolder();
+  }
+})

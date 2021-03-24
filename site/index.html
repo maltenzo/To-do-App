@@ -9,11 +9,17 @@
     <div class="container">
       <h1 class="app-title">todos</h1>
       <div>
+        <label id="directory"> Root </label>
+        <br/>
         <form id="new-to-do">
-          <input type="text" id="to-do">
+          <input type="text" id="to-do"> <!--change later to input-text-->
           <button type="submit" id="send"> Add </button>
-          <button type="button" id="new-folder"> New Folder </button>
+          <button type="button" id="new-folder">New Folder</button>
         </form>
+      </div>
+      <div>
+        <ul id="folders-list">
+        </ul>
       </div>
       <div>
         <ul id=todo-list>
