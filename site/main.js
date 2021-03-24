@@ -9,11 +9,11 @@ function add_to_do(text){
     id : global_id,
     checked: false,
     editing:false,
+    folder:current_folder,
+
   };
-  if (current_folder !== "root"){
-    const index = folder_list.findIndex(item => item.id === current_folder);
-    folder_list[index].items.push(todo.id);
-  }
+  const index = folder_list.findIndex(item => item.id === current_folder);
+  folder_list[index].items.push(todo.id);
   global_id++;
   todo_list.push(todo);
   render(todo)
@@ -30,6 +30,25 @@ function add_folder(text){
   folder_list.push(folder)
   renderFolder(folder)
 }
+
+function deleteFolder(key){
+  const index = folder_list.findIndex(item => item.id === Number(key))
+  const folder = folder_list[index]
+  todo_list.forEach((item, i) => {
+    if(folder.items.includes(item.id)){
+      deleteTodo(item.id);
+    }
+  });
+  const folderToDelete = {
+      deleted:true,
+      name:folder.name,
+      id:folder.id,
+      items:[],
+    }
+  folder_list = folder_list.filter(item => item.id !== Number(key));
+  renderFolder(folderToDelete);
+  }
+
 
 function enterFolder(key){
   const index = folder_list.findIndex(item => item.id === Number(key));
@@ -60,7 +79,6 @@ function hideFolders(){
       item.remove()
     }
   });
-
 }
 
 function toggleToDos(items){
@@ -81,8 +99,7 @@ function toggleToDos(items){
 
 function changeDirectory(folderName, folderId){
   const directory = document.getElementById("directory");
-  console.log(directory.textContent)
-  directory.innerText = "carpeta";
+  directory.innerText = folderName;
   const new_folder_btn = document.getElementById("new-folder");
   if (folderName !== "root"){
   new_folder_btn.textContent = "Back";
@@ -92,11 +109,18 @@ function changeDirectory(folderName, folderId){
   }
   current_folder = folderId
 }
+
 function renderFolder(folder){
-  if (folder.name !== "root"){
+  if (folder.name !== "Root"){
     const list = document.getElementById("folders-list");
     const elem = document.createElement("li");
     const item = document.querySelector(`[data-key='${folder.id}']`);
+
+    if (folder.deleted) {
+     // remove the item from the DOM
+     item.remove();
+     return
+   }
 
     elem.setAttribute('data-key', folder.id);
     elem.setAttribute("class", `folder`);
@@ -126,7 +150,11 @@ function deleteTodo(key){
     text:todo_list[index].text,
     id:todo_list[index].id,
     checked:todo_list[index].checked,
+    folder:todo_list[index].folder,
+
   };
+  const indexF = folder_list.findIndex(item => item.id === todo_list[index].folder)
+  folder_list[indexF].items = folder_list[indexF].items.filter(item => item !== todo_list[index].id)
   todo_list = todo_list.filter(item => item.id !== Number(key));
   render(todo);
 }
@@ -166,9 +194,12 @@ function render(todo){
   const elem = document.createElement("li");
   const item = document.querySelector(`[data-key='${todo.id}']`);
 
+
   if (todo.deleted) {
    // remove the item from the DOM
-   item.remove();
+   if (item !== null){ //need this in case that im deleting a todo that is not renderized
+     item.remove();
+    }
    return
  }
 
@@ -239,11 +270,9 @@ list.addEventListener("click", event =>{
   }
   else if (event.target.classList.contains('edit-todo')  && noOneIsEditing() ) {
     const itemKey = event.target.parentElement.dataset.key;
-    console.log(event.target.parentElement.dataset.key)
     beginEditTodo(itemKey)
   }
   else if (event.target.classList.contains('edit-confirm')) {
-    console.log(event.target.parentElement.dataset.key)
     const itemKey = event.target.parentElement.dataset.key;
     confirmEditTodo(itemKey)
   }
@@ -253,7 +282,7 @@ list.addEventListener("click", event =>{
   }
 });
 
-add_folder("root");
+add_folder("Root");
 const buttonF = document.getElementById("new-folder");
 buttonF.addEventListener("click", event =>{
   if (event.target.textContent === "New Folder"){
@@ -273,6 +302,6 @@ listF.addEventListener("click", event =>{
   }
   else if (event.target.classList.contains("delete-folder")) {
     const itemKey = event.target.parentElement.dataset.key;
-    deleteFolder();
+    deleteFolder(itemKey);
   }
 })
