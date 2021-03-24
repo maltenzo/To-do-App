@@ -1,7 +1,19 @@
-let todo_list = [];
-let folder_list =[];
-let global_id = 0;
+let todo_list = JSON.parse(localStorage.getItem("todos")) || [];
+let folder_list = JSON.parse(localStorage.getItem("folders")) || [];
+let global_id = JSON.parse(localStorage.getItem("globalId")) || 0;
 let current_folder = 0;
+let is_editing = false;
+
+
+function updateInfo(todos, folders, globalId){
+  const todoString = JSON.stringify(todos);
+  const folderString = JSON.stringify(folders);
+  const globalIdString = JSON.stringify(globalId);
+  localStorage.setItem("todos", todoString);
+  localStorage.setItem("folders", folderString);
+  localStorage.setItem("globalId", globalId);
+}
+
 
 function add_to_do(text){
   const todo = {
@@ -17,6 +29,7 @@ function add_to_do(text){
   global_id++;
   todo_list.push(todo);
   render(todo)
+  updateInfo(todo_list, folder_list, global_id);
 }
 
 function add_folder(text){
@@ -29,6 +42,7 @@ function add_folder(text){
   global_id++;
   folder_list.push(folder)
   renderFolder(folder)
+  updateInfo(todo_list, folder_list, global_id);
 }
 
 function deleteFolder(key){
@@ -47,6 +61,7 @@ function deleteFolder(key){
     }
   folder_list = folder_list.filter(item => item.id !== Number(key));
   renderFolder(folderToDelete);
+  updateInfo(todo_list, folder_list, global_id);
   }
 
 
@@ -101,13 +116,21 @@ function changeDirectory(folderName, folderId){
   const directory = document.getElementById("directory");
   directory.innerText = folderName;
   const new_folder_btn = document.getElementById("new-folder");
-  if (folderName !== "root"){
+  if (folderName !== "Root"){
   new_folder_btn.textContent = "Back";
   }
   else{
     new_folder_btn.textContent = "New Folder";
   }
   current_folder = folderId
+}
+
+function renderFolderList(list){
+  list.forEach((item, i) => {
+    renderFolder(item)
+
+  });
+
 }
 
 function renderFolder(folder){
@@ -157,25 +180,30 @@ function deleteTodo(key){
   folder_list[indexF].items = folder_list[indexF].items.filter(item => item !== todo_list[index].id)
   todo_list = todo_list.filter(item => item.id !== Number(key));
   render(todo);
+  updateInfo(todo_list, folder_list, global_id);
 }
 
 function beginEditTodo(key){
   const index = todo_list.findIndex(item => item.id === Number(key));
   todo_list[index].editing = true;
+  is_editing = true;
   render(todo_list[index]);
 }
 
 function confirmEditTodo(key){
   const index = todo_list.findIndex(item => item.id === Number(key));
   todo_list[index].editing = false;
+  is_editing = false;
   const new_text = document.getElementById("edit-text").value;
   todo_list[index].text = new_text;
   render(todo_list[index]);
+  updateInfo(todo_list, folder_list, global_id);
 }
 
 function cancelEditTodo(key){
   const index = todo_list.findIndex(item => item.id === Number(key));
   todo_list[index].editing = false;
+  is_editing = false;
   render(todo_list[index]);
 }
 
@@ -187,6 +215,12 @@ function noOneIsEditing(){
   return !res
 }
 
+function renderTodoList(list){
+  list.forEach((item, i) => {
+    render(item);
+  });
+
+}
 function render(todo){
   const list = document.getElementById("todo-list");
   const is_checked = todo.checked ? "done" : "";
@@ -243,16 +277,20 @@ function render(todo){
 
 window.onload = () =>{
   const form = document.getElementById("new-to-do");
+  renderFolderList(folder_list);
+  renderTodoList(todo_list);
 
 
   form.onsubmit = (e) =>{
     e.preventDefault();
-    const todo = document.getElementById("to-do");
-    const todo_text = todo.value.trim();
-    if (todo_text != ""){
-      add_to_do(todo_text);
-      todo.value = "";
-      todo.focus();
+    if(!is_editing){
+      const todo = document.getElementById("to-do");
+      const todo_text = todo.value.trim();
+      if (todo_text != ""){
+        add_to_do(todo_text);
+        todo.value = "";
+        todo.focus();
+      }
     }
 
   }
@@ -260,15 +298,15 @@ window.onload = () =>{
 
 const list = document.getElementById("todo-list");
 list.addEventListener("click", event =>{
-  if(event.target.classList.contains("check")){
+  if(event.target.classList.contains("check") && !is_editing){
     const itemKey = event.target.parentElement.dataset.key;
     toggleDone(itemKey)
   }
-  else if (event.target.classList.contains('delete-todo')) {
+  else if (event.target.classList.contains('delete-todo') && !is_editing) {
     const itemKey = event.target.parentElement.dataset.key;
     deleteTodo(itemKey)
   }
-  else if (event.target.classList.contains('edit-todo')  && noOneIsEditing() ) {
+  else if (event.target.classList.contains('edit-todo') && !is_editing) {
     const itemKey = event.target.parentElement.dataset.key;
     beginEditTodo(itemKey)
   }
@@ -285,22 +323,28 @@ list.addEventListener("click", event =>{
 add_folder("Root");
 const buttonF = document.getElementById("new-folder");
 buttonF.addEventListener("click", event =>{
-  if (event.target.textContent === "New Folder"){
+  if (event.target.textContent === "New Folder" && !is_editing){
     folderName = document.getElementById("to-do").value; //change later to input-text
-    add_folder(folderName);
+    const todo = document.getElementById("to-do");
+    const todo_text = todo.value.trim();
+    if (todo_text != ""){
+      add_folder(folderName);
+      todo.value = "";
+      todo.focus();
+    }
   }
-  else if(event.target.textContent === "Back"){
+  else if(event.target.textContent === "Back" && !is_editing){
       returnToRoot();
   }
 });
 
 const listF = document.getElementById("folders-list");
 listF.addEventListener("click", event =>{
-  if(event.target.classList.contains("folder-access")){
+  if(event.target.classList.contains("folder-access") && !is_editing){
     const itemKey = event.target.parentElement.dataset.key;
     enterFolder(itemKey);
   }
-  else if (event.target.classList.contains("delete-folder")) {
+  else if (event.target.classList.contains("delete-folder") && !is_editing) {
     const itemKey = event.target.parentElement.dataset.key;
     deleteFolder(itemKey);
   }
