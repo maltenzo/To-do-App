@@ -5,17 +5,10 @@ let current_folder = 0;
 let is_editing = false;
 
 
-function updateInfo(todos, folders, globalId){
-  const todoString = JSON.stringify(todos);
-  const folderString = JSON.stringify(folders);
-  const globalIdString = JSON.stringify(globalId);
-  localStorage.setItem("todos", todoString);
-  localStorage.setItem("folders", folderString);
-  localStorage.setItem("globalId", globalId);
-}
-
 //-------------------To do related functions-----------------------------------
+// text = todo name
 function add_to_do(text){
+  //create the new todo
   const todo = {
     text,
     id : global_id,
@@ -24,14 +17,18 @@ function add_to_do(text){
     folder:current_folder,
 
   };
+  //get the current folder object and save todo id  on it
   const index = folder_list.findIndex(item => item.id === current_folder);
   folder_list[index].items.push(todo.id);
-  global_id++;
+  //save todo into the array and update the global id
   todo_list.push(todo);
+  global_id++;
+  //render and update local storage
   renderTodo(todo)
   updateInfo(todo_list, folder_list, global_id);
 }
 
+//deletes the todo and then is deleted from the screen by render function (if needed)
 function deleteTodo(key){
   const index = todo_list.findIndex(item => item.id === Number(key))
   const todo ={
@@ -39,6 +36,7 @@ function deleteTodo(key){
     text:todo_list[index].text,
     id:todo_list[index].id,
     checked:todo_list[index].checked,
+    editing:todo_list[index].editing,
     folder:todo_list[index].folder,
 
   };
@@ -49,13 +47,17 @@ function deleteTodo(key){
   updateInfo(todo_list, folder_list, global_id);
 }
 
+//change the todo so its editable (if its not checked)
 function beginEditTodo(key){
   const index = todo_list.findIndex(item => item.id === Number(key));
-  todo_list[index].editing = true;
-  is_editing = true;
-  renderTodo(todo_list[index]);
+  if (!todo_list[index].checked){
+    todo_list[index].editing = true;
+    is_editing = true;
+    renderTodo(todo_list[index]);
+  }
 }
 
+//saves changes to the edit
 function confirmEditTodo(key){
   const index = todo_list.findIndex(item => item.id === Number(key));
   todo_list[index].editing = false;
@@ -66,6 +68,7 @@ function confirmEditTodo(key){
   updateInfo(todo_list, folder_list, global_id);
 }
 
+//discard edits changes
 function cancelEditTodo(key){
   const index = todo_list.findIndex(item => item.id === Number(key));
   todo_list[index].editing = false;
@@ -73,6 +76,7 @@ function cancelEditTodo(key){
   renderTodo(todo_list[index]);
 }
 
+//function to render a list of todos (if its in the actual folder)
 function renderTodoList(list){
   list.forEach((item, i) => {
     console.log(current_folder, item.folder)
@@ -137,9 +141,10 @@ function renderTodo(todo){
  }
 }
 
-
+//this function removes and render the todos when moving through folders
+//items is a list of todo.id
 function toggleTodos(items){
-  const list = document.getElementById("todo-list");
+  //const list = document.getElementById("todo-list");
   todo_list.forEach((todo, i) => {
       if(!items.includes(todo.id)){
         let item = document.querySelector(`[data-key='${todo.id}']`);
@@ -154,6 +159,7 @@ function toggleTodos(items){
 
 }
 
+//this funcion is in charge of setting the checked property
 function toggleDone(key){
   const index = todo_list.findIndex(item => item.id === Number(key))
   todo_list[index].checked = !todo_list[index].checked;
@@ -163,6 +169,7 @@ function toggleDone(key){
 
 //------------------------Folder related functios-------------------------------
 
+//text = folder´s name, Adds a folder
 function add_folder(text){
   const folder ={
     name:text,
@@ -176,6 +183,7 @@ function add_folder(text){
   updateInfo(todo_list, folder_list, global_id);
 }
 
+//deletes the folder indicate vy the key
 function deleteFolder(key){
   const index = folder_list.findIndex(item => item.id === Number(key))
   const folder = folder_list[index]
@@ -195,6 +203,7 @@ function deleteFolder(key){
   updateInfo(todo_list, folder_list, global_id);
   }
 
+//enters to the folder indicated by the key
 function enterFolder(key){
   const index = folder_list.findIndex(item => item.id === Number(key));
   const folder = folder_list[index];
@@ -204,11 +213,10 @@ function enterFolder(key){
 
 }
 
+//similar to enterFolder but with especific behavior because of the root
 function returnToRoot(){
   changeDirectory(folder_list[0].name, folder_list[0].id);
-  folder_list.forEach((folder, i) => {
-    renderFolder(folder)
-  });
+  renderFolderList(folder_list);
   const itemsToRender = folder_list[0].items;
   toggleTodos(itemsToRender)
 
@@ -216,6 +224,7 @@ function returnToRoot(){
 
 }
 
+//to hide folders
 function hideFolders(){
   const list = document.getElementById("folders-list");
   folder_list.forEach((folder, i) => {
@@ -227,6 +236,7 @@ function hideFolders(){
   });
 }
 
+//changes the label, the "new folder" btn and the variable of the current folder
 function changeDirectory(folderName, folderId){
   const directory = document.getElementById("directory");
   directory.innerText = folderName;
@@ -240,6 +250,7 @@ function changeDirectory(folderName, folderId){
   current_folder = folderId
 }
 
+//renders a list of folders
 function renderFolderList(list){
   list.forEach((item, i) => {
     renderFolder(item)
@@ -248,6 +259,7 @@ function renderFolderList(list){
 
 }
 
+//renders a folder (the item in the root)
 function renderFolder(folder){
   if (folder.name !== "Root"){
     const list = document.getElementById("folders-list");
@@ -275,7 +287,8 @@ function renderFolder(folder){
   }
 }
 
-//----------------------------------reset--------------------
+//----------------------------------misc---------------------------------------
+//resets to normal values, only for debug
 function reset(){
   global_id = 0
   folder_list = [];
@@ -284,6 +297,18 @@ function reset(){
   updateInfo(todo_list, folder_list, global_id)
 }
 
+//saves important information on local storage
+function updateInfo(todos, folders, globalId){
+  const todoString = JSON.stringify(todos);
+  const folderString = JSON.stringify(folders);
+  const globalIdString = JSON.stringify(globalId);
+  localStorage.setItem("todos", todoString);
+  localStorage.setItem("folders", folderString);
+  localStorage.setItem("globalId", globalId);
+}
+
+
+//--------------------------------events----------------------------------------
 window.onload = () =>{
   const form = document.getElementById("new-to-do");
   if(folder_list.lenght === 0){
