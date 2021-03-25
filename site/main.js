@@ -79,7 +79,6 @@ function cancelEditTodo(key){
 //function to render a list of todos (if its in the actual folder)
 function renderTodoList(list){
   list.forEach((item, i) => {
-    console.log(current_folder, item.folder)
     if(current_folder === item.folder){
       renderTodo(item);
     }
@@ -111,7 +110,7 @@ function renderTodo(todo){
       <label for="${todo.id}" class="check"></label>
       <form><input type="text" id="edit-text" value=${todo.text}></input></form>
       <button class="edit-confirm">
-      <img src="tick.svg"/>
+      <img src="imgs/tick.svg"/>
       </button>
       <button class="edit-cancel">
       <svg><use href="#delete-icon"></use></svg>
@@ -124,7 +123,7 @@ function renderTodo(todo){
       <label for="${todo.id}" class="check"></label>
       <span>${todo.text}</span>
       <button class="edit-todo">
-      <img src="editar.svg"/>
+      <img src="imgs/editar.svg"/>
       </button>
       <button class="delete-todo">
       <svg><use href="#delete-icon"></use></svg>
@@ -230,7 +229,6 @@ function hideFolders(){
   folder_list.forEach((folder, i) => {
     if(folder.id > 0){
       let item = document.querySelector(`[data-key='${folder.id}']`);
-      console.log(folder)
       item.remove()
     }
   });
